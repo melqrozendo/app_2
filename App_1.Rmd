@@ -1,0 +1,141 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+
+# Manipular as tabelas
+library(dplyr)
+
+# Gráficos
+library(ggplot2)
+library(plotly)
+
+# Pegar dados financeiros
+library(tidyquant)
+
+```
+Column {.sidebar}
+
+```{r}
+selectInput(
+  "ticker", 
+  "Escolha o ticker:",
+  choices = c("PETR4.SA", "BBAS3.SA",
+              "VALE3.SA", "WEGE3.SA")
+)
+
+```
+
+```{r download}
+#dados_tbl <- tq_get("PETR4.SA", from = "2023-05-01")
+
+#alterar dados_tbl:
+dados_tbl <- reactive({
+  tq_get(input$ticker)
+})
+
+```
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+#pegar dados do yahoo finances
+#pegar dadpos petr4.sa
+
+#FAZER TABELA
+
+#add um renderTable:
+# renderTable({
+#   tq_get("PETR4.SA")
+# })
+
+#deletar colunas
+# tq_get("PETR4.SA", from = "2023-05-01") %>%
+#   select(date, adjusted) %>% 
+#   arrange(desc(date))
+
+#fazer Tabela:
+renderDataTable({
+  dados_tbl() %>%
+    select(date, adjusted) %>% 
+    arrange(desc(date))
+})
+
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Chart B - Grafico 01
+
+```{r}
+#fazer o grafico 01
+
+# g <- tq_get("PETR4.SA", from = "2023-05-01") %>% 
+#   ggplot(aes(x = date, y = adjusted)) + 
+#   geom_line()
+# 
+# ggplotly(g)
+
+# g <- dados_tbl %>% 
+#    ggplot(aes(x = date, y = adjusted)) + 
+#    geom_line()
+#  
+#  ggplotly(g)
+
+#add render plot
+ 
+ renderPlotly({
+   dados_tbl() %>% 
+   ggplot(aes(x = date, y = adjusted)) + 
+   geom_line()
+ })
+```
+
+
+
+### Chart B - Grafico 02
+
+```{r}
+#fazer o grafico 02
+
+# renderPlotly({
+#    tq_get(c("PETR4.SA", "BBAS3.SA",
+ #             "VALE3.SA", "WEGE3.SA"))
+#   dados_tbl() %>% 
+#   ggplot(aes(x = date, y = adjusted, color = symbol)) + 
+#   geom_line()
+# })
+
+#remover: dados_tbl()
+
+renderPlotly({
+    tq_get(c("PETR4.SA", "BBAS3.SA",
+              "VALE3.SA", "WEGE3.SA")) %>% 
+    group_by(symbol) %>%
+    mutate(cotacao = (adjusted - mean(adjusted))/ sd( adjusted)) %>%
+    ungroup() %>%
+   ggplot(aes(x = date, y = adjusted, color = symbol)) + 
+   geom_line()
+ })
+
+```
+
+
+
+
+
